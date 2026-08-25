@@ -1,11 +1,12 @@
 import express from "express";
 import fetch from "node-fetch";
-import History from "../models/History.js";
+import User from "../models/User.js";   
+import auth from "../middleware/auth.js"; 
 
 const router = express.Router();
 
-// ✅ Fetch weather for a city and save to history
-router.get("/:city", async (req, res) => {
+//Fetch weather for a city and save to logged-in user's history
+router.get("/:city", auth(["user", "admin"]), async (req, res) => {
   const { city } = req.params;
 
   if (!city || city.trim().length === 0) {
@@ -30,11 +31,14 @@ router.get("/:city", async (req, res) => {
       temp: data.main.temp,
       humidity: data.main.humidity,
       condition: data.weather[0].description,
-      icon: data.weather[0].icon
+      icon: data.weather[0].icon,
+      date: new Date()
     };
 
-    // ✅ Save search to MongoDB
-    await History.create(weatherData);
+    //Save search to logged-in user's history
+    const user = await User.findById(req.user.id);
+    user.searchHistory.push(weatherData);
+    await user.save();
 
     res.json(weatherData);
   } catch (err) {
@@ -43,15 +47,29 @@ router.get("/:city", async (req, res) => {
   }
 });
 
-// ✅ Get recent search history
-router.get("/", async (req, res) => {
+//Get logged-in user's search history
+router.get("/history/all", auth(["user", "admin"]), async (req, res) => {
   try {
-    const history = await History.find().sort({ searchedAt: -1 }).limit(10);
-    res.json(history);
+    const user = await User.findById(req.user.id);
+    res.json(user.searchHistory);
   } catch (err) {
     console.error("❌ Error fetching history:", err);
     res.status(500).json({ error: "❌ Failed to fetch history" });
   }
 });
 
+//Clear logged-in user's search history
+router.delete("/history/clear", auth(["user", "admin"]), async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    user.searchHistory = [];
+    await user.save();
+    res.json({ msg: "✅ History cleared" });
+  } catch (err) {
+    console.error("❌ Error clearing history:", err);
+    res.status(500).json({ error: "❌ Failed to clear history" });
+  }
+});
+
 export default router;
+
