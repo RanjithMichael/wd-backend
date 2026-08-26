@@ -14,15 +14,18 @@ const generateToken = (user) => {
 //Register new user
 export const registerUser = async (req, res) => {
   try {
+    console.log("Register request body:", req.body);
     const { username, email, password } = req.body;
 
-    // Check if user already exists
+    if (!username || !email || !password) {
+      return res.status(400).json({ msg: "All fields are required" });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ msg: "❌ User already exists" });
     }
 
-    // Create new user
     const user = new User({ username, email, password });
     await user.save();
 
@@ -37,6 +40,7 @@ export const registerUser = async (req, res) => {
     res.status(500).json({ msg: "❌ Server error" });
   }
 };
+
 
 //Login user
 export const loginUser = async (req, res) => {
