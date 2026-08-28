@@ -42,25 +42,27 @@ export const registerUser = async (req, res) => {
 };
 
 
-//Login user
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log("Login request body:", req.body);
 
-    // Find user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ msg: "❌ Invalid credentials" });
+    if (!email || !password) {
+      return res.status(400).json({ msg: "Email and password are required" });
     }
 
-    // Check password
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: "User not found" });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ msg: "❌ Invalid credentials" });
+      return res.status(400).json({ msg: "Invalid credentials" });
     }
 
     const token = generateToken(user);
-    res.json({
+    res.status(200).json({
       msg: "✅ Login successful",
       token,
       user: { id: user._id, username: user.username, email: user.email },

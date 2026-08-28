@@ -1,11 +1,11 @@
 import express from "express";
 import fetch from "node-fetch";
-import User from "../models/User.js";   
-import auth from "../middleware/auth.js"; 
+import User from "../models/User.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-//Fetch weather for a city and save to logged-in user's history
+// ✅ Fetch weather for a city and save to logged-in user's history
 router.get("/:city", auth(["user", "admin"]), async (req, res) => {
   const { city } = req.params;
 
@@ -35,8 +35,13 @@ router.get("/:city", auth(["user", "admin"]), async (req, res) => {
       date: new Date()
     };
 
-    //Save search to logged-in user's history
+    // ✅ Save search to logged-in user's history
     const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "❌ User not found" });
+    }
+
+    if (!user.searchHistory) user.searchHistory = [];
     user.searchHistory.push(weatherData);
     await user.save();
 
@@ -47,21 +52,23 @@ router.get("/:city", auth(["user", "admin"]), async (req, res) => {
   }
 });
 
-//Get logged-in user's search history
+// ✅ Get logged-in user's search history
 router.get("/history/all", auth(["user", "admin"]), async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    res.json(user.searchHistory);
+    if (!user) return res.status(404).json({ error: "❌ User not found" });
+    res.json(user.searchHistory || []);
   } catch (err) {
     console.error("❌ Error fetching history:", err);
     res.status(500).json({ error: "❌ Failed to fetch history" });
   }
 });
 
-//Clear logged-in user's search history
+// ✅ Clear logged-in user's search history
 router.delete("/history/clear", auth(["user", "admin"]), async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: "❌ User not found" });
     user.searchHistory = [];
     await user.save();
     res.json({ msg: "✅ History cleared" });
@@ -72,4 +79,5 @@ router.delete("/history/clear", auth(["user", "admin"]), async (req, res) => {
 });
 
 export default router;
+
 
