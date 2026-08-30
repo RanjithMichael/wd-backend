@@ -20,11 +20,14 @@ const userSchema = new mongoose.Schema(
       required: [true, "Password is required"],
       minlength: 6,
     },
-    history: [
+    searchHistory: [
       {
         city: { type: String, required: true },
-        result: { type: Object }, // store weather API response
-        searchedAt: { type: Date, default: Date.now }
+        temp: Number,
+        humidity: Number,
+        condition: String,
+        icon: String,
+        date: { type: Date, default: Date.now }
       }
     ]
   },

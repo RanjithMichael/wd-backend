@@ -17,11 +17,18 @@ const auth = (roles = []) => {
       const token = parts[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Attach decoded payload to request
-      req.user = decoded;
+      // 🔹 Debug log
+      console.log("Decoded JWT payload:", decoded);
 
-      // Role check (optional)
-      if (roles.length && !roles.includes(decoded.role)) {
+      // 🔹 Explicitly attach normalized fields
+      req.user = {
+        id: decoded.id || decoded._id, // handle both id and _id
+        email: decoded.email,
+        role: decoded.role || "user",
+      };
+
+      // 🔹 Role check
+      if (roles.length && !roles.includes(req.user.role)) {
         return res.status(403).json({ msg: "❌ Forbidden: insufficient role" });
       }
 
@@ -30,6 +37,7 @@ const auth = (roles = []) => {
       if (err.name === "TokenExpiredError") {
         return res.status(401).json({ msg: "❌ Token expired" });
       }
+      console.error("❌ Auth error:", err);
       return res.status(401).json({ msg: "❌ Invalid or expired token" });
     }
   };

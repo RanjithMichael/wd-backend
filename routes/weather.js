@@ -5,7 +5,7 @@ import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-// ✅ Fetch weather for a city and save to logged-in user's history
+//Fetch weather for a city and save to logged-in user's history
 router.get("/:city", auth(["user", "admin"]), async (req, res) => {
   const { city } = req.params;
 
@@ -35,16 +35,17 @@ router.get("/:city", auth(["user", "admin"]), async (req, res) => {
       date: new Date()
     };
 
-    // ✅ Save search to logged-in user's history
+    //Save search to logged-in user's history
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: "❌ User not found" });
     }
 
     if (!user.searchHistory) user.searchHistory = [];
+    console.log("Before push:", user.searchHistory);
     user.searchHistory.push(weatherData);
     await user.save();
-
+    console.log("After push:", user.searchHistory);
     res.json(weatherData);
   } catch (err) {
     console.error("❌ Error calling Weather API:", err);
@@ -52,19 +53,20 @@ router.get("/:city", auth(["user", "admin"]), async (req, res) => {
   }
 });
 
-// ✅ Get logged-in user's search history
+//Get logged-in user's search history
 router.get("/history/all", auth(["user", "admin"]), async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    console.log("❌ User not found for ID:", req.user.id);
     if (!user) return res.status(404).json({ error: "❌ User not found" });
-    res.json(user.searchHistory || []);
+    res.json(user.searchHistory);
   } catch (err) {
     console.error("❌ Error fetching history:", err);
     res.status(500).json({ error: "❌ Failed to fetch history" });
   }
 });
 
-// ✅ Clear logged-in user's search history
+//Clear logged-in user's search history
 router.delete("/history/clear", auth(["user", "admin"]), async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
